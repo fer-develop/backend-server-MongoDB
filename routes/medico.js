@@ -7,19 +7,26 @@ var Medico = require("../models/medico");
 
 // Obtener todos los medicos
 app.get("/", (req, res, next) => {
-    Medico.find({}, (err, medicos) => {
-        if (err) {
-            return res.status(500).json({
-                ok: false,
-                mensaje: "Error cargando medicos",
-                errors: err
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+    Medico.find({}).skip(desde).limit(5).populate('usuario', 'nombre email')
+        .populate('hospital').exec((err, medicos) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: "Error cargando medicos",
+                    errors: err
+                });
+            }
+
+            Medico.count({}, (err, conteo) => {
+                res.status(200).json({
+                    ok: true,
+                    medicos: medicos,
+                    total: conteo
+                });
             });
-        }
-        res.status(200).json({
-            ok: true,
-            medicos: medicos
         });
-    });
 });
 
 // Crear un nuevo medico
@@ -28,7 +35,7 @@ app.post("/", mdAuntenticacion.verificaToken, (req, res) => {
 
     var medico = new Medico({
         nombre: body.nombre,
-        img: body.img,
+        // img: body.img,
         usuario: req.usuario._id,
         hospital: body.hospital
     });
@@ -95,7 +102,7 @@ app.put("/:id", mdAuntenticacion.verificaToken, (req, res) => {
         }
 
         medico.nombre = body.nombre;
-        medico.img = body.img;
+        // medico.img = body.img;
         medico.usuario = req.usuario._id;
         medico.hospital = body.hospital;
 
